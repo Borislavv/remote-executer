@@ -14,14 +14,14 @@ type Polling struct {
 	msgOffset int64
 
 	ctx     context.Context
-	gateway Telegram
-	msgRepo mongoRepo.MsgRepo
+	gateway *Telegram
+	msgRepo *mongoRepo.MsgRepo
 }
 
 func NewPolling(
 	ctx context.Context,
-	gateway Telegram,
-	msgRepo mongoRepo.MsgRepo,
+	gateway *Telegram,
+	msgRepo *mongoRepo.MsgRepo,
 ) *Polling {
 	return &Polling{
 		ctx:     ctx,
