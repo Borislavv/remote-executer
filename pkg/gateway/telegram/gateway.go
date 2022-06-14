@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strings"
 )
 
@@ -31,7 +30,10 @@ func (gateway *TelegramGateway) GetMessages(reqMsgs RequestGetMessagesInterface)
 	// getting message by network from telegram api
 	response, err := http.Get(
 		fmt.Sprintf(
-			fmt.Sprintf(gateway.endpointPattern, gateway.token, getMessagesMethod),
+			"%sbot%s/%s?offset=%s",
+			gateway.endpointPattern,
+			gateway.token,
+			getMessagesMethod,
 			fmt.Sprint(reqMsgs.GetOffset()),
 		),
 	)
@@ -55,17 +57,28 @@ func (gateway *TelegramGateway) GetMessages(reqMsgs RequestGetMessagesInterface)
 }
 
 func (gateway *TelegramGateway) SendMessage(reqMsg RequestSendMessageInterface) error {
+	reqBody, err := json.Marshal(
+		map[string]interface{}{
+			"chat_id": reqMsg.GetChatId(),
+			"text":    reqMsg.GetMessage(),
+		},
+	)
+	if err != nil {
+		return err
+	}
+
 	// sending message by network to telegram api
 	response, err := http.Post(
 		fmt.Sprintf(
 			fmt.Sprintf(
-				gateway.endpointPattern, gateway.token, sendMessageMethod,
+				"%sbot%s/%s",
+				gateway.endpointPattern,
+				gateway.token,
+				sendMessageMethod,
 			),
-			reqMsg.GetChatId(),
-			url.QueryEscape(reqMsg.GetMessage()),
 		),
 		"application/json",
-		strings.NewReader(url.Values{}.Encode()),
+		strings.NewReader(string(reqBody)),
 	)
 	if err != nil {
 		return err

@@ -19,9 +19,11 @@ type ResponseGetMessage struct {
 	QueueId int64 `json:"update_id"`
 	Data    struct {
 		Chat struct {
-			ID       int64  `json:"id"`
-			Title    string `json:"first_name"`
-			Username string `json:"username"`
+			ID        int64  `json:"id"`
+			FirstName string `json:"first_name"`
+			LastName  string `json:"last_name"`
+			Username  string `json:"username"`
+			Type      string `json:"type"`
 		} `json:"chat"`
 		Date int64  `json:"date"`
 		Text string `json:"text"`
@@ -48,14 +50,24 @@ func (respMsg ResponseGetMessage) GetChatId() int64 {
 	return respMsg.Data.Chat.ID
 }
 
-// GetTitle is a getter of Title field.
-func (respMsg ResponseGetMessage) GetTitle() string {
-	return respMsg.Data.Chat.Title
+// GetTitle is a getter of FirstName field.
+func (respMsg ResponseGetMessage) GetFirstName() string {
+	return respMsg.Data.Chat.FirstName
+}
+
+// GetTitle is a getter of FirstName field.
+func (respMsg ResponseGetMessage) GetLastName() string {
+	return respMsg.Data.Chat.LastName
 }
 
 // GetUsername is a getter of Username field.
 func (respMsg ResponseGetMessage) GetUsername() string {
 	return respMsg.Data.Chat.Username
+}
+
+// GetUsername is a getter of Chat.Type field.
+func (respMsg ResponseGetMessage) GetChatType() string {
+	return respMsg.Data.Chat.Type
 }
 
 // GetDate is a getter of Date field.
