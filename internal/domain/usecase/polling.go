@@ -31,6 +31,8 @@ func NewPolling(
 }
 
 func (p *Polling) Do(messagesCh chan<- telegramGateway.ResponseGetMessagesInterface, errCh chan<- error) {
+	log.Println("polling has been started")
+
 	for {
 		select {
 		case <-p.ctx.Done():
@@ -51,9 +53,11 @@ func (p *Polling) Do(messagesCh chan<- telegramGateway.ResponseGetMessagesInterf
 
 			msgAggs := builder.BuildMsgAggs(msgDTOs)
 
-			if err := p.msgRepo.InsertMany(p.ctx, msgAggs); err != nil {
-				errCh <- err
-				continue
+			if len(msgAggs) > 0 {
+				if err := p.msgRepo.InsertMany(p.ctx, msgAggs); err != nil {
+					errCh <- err
+					continue
+				}
 			}
 		}
 	}

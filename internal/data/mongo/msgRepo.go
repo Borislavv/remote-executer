@@ -36,6 +36,9 @@ func (r *MsgRepo) InsertMany(ctx context.Context, msgs []agg.Msg) error {
 		r.buf = append(r.buf, fundStat)
 	}
 	result, err := r.coll.InsertMany(ctx, r.buf, options.InsertMany())
+	if err != nil {
+		return err
+	}
 	if len(result.InsertedIDs) == 0 {
 		return errors.New("MsgRepo.InsertMany: no one `Msg` document was created")
 	}
@@ -86,7 +89,11 @@ func (r *MsgRepo) GetOffset(ctx context.Context) (int64, error) {
 	}
 	defer c.Close(ctx)
 
-	if err := c.Decode(msg); err != nil {
+	if !c.Next(ctx) {
+		// handle the case when doc. was not found
+		return 0, nil
+	}
+	if err := c.Decode(&msg); err != nil {
 		return 0, err
 	}
 
