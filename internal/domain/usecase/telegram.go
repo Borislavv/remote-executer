@@ -3,27 +3,28 @@ package usecase
 import (
 	"time"
 
+	telegramGateway "github.com/Borislavv/TelegramApiGateway/telegram"
+
 	"github.com/Borislavv/remote-executer/internal/domain/dto"
 	"github.com/Borislavv/remote-executer/internal/domain/entity"
-	tg "github.com/Borislavv/remote-executer/pkg/gateway/telegram"
 )
 
 // Adapter of the Telegram gateway
-// 	Repo: github.com/Borislavv/remote-executer/pkg/gateway/telegram
+// 	Repo: github.com/Borislavv/TelegramApiGateway
 type Telegram struct {
-	gateway *tg.TelegramGateway
+	gateway *telegramGateway.TelegramGateway
 }
 
 func NewTelegram(endpoint string, token string) *Telegram {
 	return &Telegram{
-		gateway: tg.NewGateway(endpoint, token),
+		gateway: telegramGateway.NewGateway(endpoint, token),
 	}
 }
 
 func (t *Telegram) GetMessages(offset int64) ([]dto.Msg, error) {
 	var msgDTOs []dto.Msg
 
-	resp, err := t.gateway.GetMessages(tg.NewRequestGetMessages(offset))
+	resp, err := t.gateway.GetMessages(telegramGateway.NewRequestGetMessages(offset))
 	if err != nil {
 		return msgDTOs, err
 	}
@@ -49,5 +50,5 @@ func (t *Telegram) GetMessages(offset int64) ([]dto.Msg, error) {
 }
 
 func (t *Telegram) SendMessage(chatId int64, text string) error {
-	return t.gateway.SendMessage(tg.NewRequestSendMessage(chatId, text))
+	return t.gateway.SendMessage(telegramGateway.NewRequestSendMessage(chatId, text))
 }

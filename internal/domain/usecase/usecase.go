@@ -3,22 +3,31 @@ package usecase
 import (
 	"context"
 
-	telegramGateway "github.com/Borislavv/remote-executer/pkg/gateway/telegram"
+	mongoRepo "github.com/Borislavv/remote-executer/internal/data/mongo"
+	agg "github.com/Borislavv/remote-executer/internal/domain/agg/msg"
+	"github.com/Borislavv/remote-executer/internal/domain/dto"
 )
 
 type PollingUseCase interface {
-	NewPolling(ctx context.Context, gateway telegramGateway.TelegramGateway) *Polling
-	Do(messagesCh chan<- telegramGateway.ResponseGetMessagesInterface, errCh chan<- error)
+	NewPolling(ctx context.Context, gateway *Telegram, msgRepo *mongoRepo.MsgRepo) *Polling
+	// Do - polling telegram and send messages into channel
+	Do(messagesCh chan<- []agg.Msg, errCh chan<- error)
 }
 
 type MessagesUseCase interface {
-	Consume(ctx context.Context, messagesCh <-chan telegramGateway.ResponseGetMessagesInterface, errCh chan<- error)
+	NewMessages(ctx context.Context, msgRepo *mongoRepo.MsgRepo) *Messages
+	// Consume - consuming messages from channel and store them
+	Consume(messagesCh <-chan []agg.Msg, errCh chan<- error)
 }
 
-type CommandUseCase interface {
-	Exec(ctx context.Context, responseCh chan<- telegramGateway.RequestGetMessagesInterface, errCh chan<- error)
+type CommandsUseCase interface {
+	NewCommands(ctx context.Context, msgRepo *mongoRepo.MsgRepo)
+	// Exec - find and execute commands
+	Exec(responseCh chan<- dto.TelegramResponseInterface, errCh chan<- error)
 }
 
 type ResponseUseCase interface {
-	Send(ctx context.Context, responseCh <-chan telegramGateway.RequestGetMessagesInterface, errCh chan<- error)
+	NewResponse(ctx context.Context)
+	// Send - sending response of executed commands
+	Send(responseCh <-chan dto.TelegramResponseInterface, errCh chan<- error)
 }

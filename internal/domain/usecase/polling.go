@@ -5,8 +5,8 @@ import (
 	"log"
 
 	mongoRepo "github.com/Borislavv/remote-executer/internal/data/mongo"
+	agg "github.com/Borislavv/remote-executer/internal/domain/agg/msg"
 	"github.com/Borislavv/remote-executer/internal/domain/builder"
-	telegramGateway "github.com/Borislavv/remote-executer/pkg/gateway/telegram"
 )
 
 type Polling struct {
@@ -30,7 +30,7 @@ func NewPolling(
 	}
 }
 
-func (p *Polling) Do(messagesCh chan<- telegramGateway.ResponseGetMessagesInterface, errCh chan<- error) {
+func (p *Polling) Do(messagesCh chan<- []agg.Msg, errCh chan<- error) {
 	log.Println("polling has been started")
 
 	for {
@@ -53,11 +53,11 @@ func (p *Polling) Do(messagesCh chan<- telegramGateway.ResponseGetMessagesInterf
 
 			msgAggs := builder.BuildMsgAggs(msgDTOs)
 
-			if len(msgAggs) > 0 {
-				if err := p.msgRepo.InsertMany(p.ctx, msgAggs); err != nil {
-					errCh <- err
-					continue
-				}
+			len := len(msgAggs)
+			if len > 0 {
+				messagesCh <- msgAggs
+
+				p.updateOffset(len)
 			}
 		}
 	}
@@ -76,4 +76,10 @@ func (p *Polling) getOffset() (int64, error) {
 	p.msgOffset = offset
 
 	return offset, nil
+}
+
+func (p *Polling) updateOffset(msgsSliceLen int) {
+	if p.msgOffset != 0 {
+		p.msgOffset = p.msgOffset + int64(msgsSliceLen)
+	}
 }

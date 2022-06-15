@@ -12,11 +12,12 @@ type Msg struct {
 	ID primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 
 	// data
-	Msg entity.Msg `bson:",inline"`
+	Msg      entity.Msg `bson:",inline"`
+	Executed bool       `json:"executed" bson:"executed"`
 
 	// referencies
-	User entity.User
-	Chat entity.Chat
+	User entity.User `bson:",inline"`
+	Chat entity.Chat `bson:",inline"`
 
 	// Volume object: created at...
 	Timestamp vo.Timestamp `bson:",inline"`

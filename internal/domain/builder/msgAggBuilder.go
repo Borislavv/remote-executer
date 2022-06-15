@@ -26,8 +26,9 @@ func buildMsgAgg(msgDTO dto.Msg) agg.Msg {
 			UpdateId: msgDTO.UpdateId,
 			Date:     msgDTO.Date,
 		},
-		User: msgDTO.User,
-		Chat: msgDTO.Chat,
+		Executed: false,
+		User:     msgDTO.User,
+		Chat:     msgDTO.Chat,
 		Timestamp: vo.Timestamp{
 			CreatedAt: time.Now(),
 		},

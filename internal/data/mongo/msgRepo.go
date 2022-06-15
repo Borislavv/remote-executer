@@ -69,6 +69,14 @@ func (r *MsgRepo) Find(ctx context.Context, q agg.MsgQuery) ([]agg.Msg, error) {
 	return response, nil
 }
 
+func (r *MsgRepo) MarkAsExecuted(ctx context.Context, msg agg.Msg) error {
+	_, err := r.coll.UpdateByID(ctx, msg.ID, bson.M{"$set": bson.M{"executed": true}})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *MsgRepo) GetOffset(ctx context.Context) (int64, error) {
 	var msg agg.MsgQuery
 

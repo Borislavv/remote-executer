@@ -55,6 +55,13 @@ type MsgQuery struct {
 	// example: 2021-11-21
 	DateTo time.Time `json:"dateTo" schema:"dateTo"`
 
+	// Is command was executed?
+	//
+	// required: false
+	// in: query
+	// example: true|false
+	Executed bool `json:"executed" schema:"executed"`
+
 	// Sort by field
 	//
 	// required: false

@@ -9,8 +9,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	mongoRepo "github.com/Borislavv/remote-executer/internal/data/mongo"
+	agg "github.com/Borislavv/remote-executer/internal/domain/agg/msg"
 	"github.com/Borislavv/remote-executer/internal/domain/usecase"
-	telegramGateway "github.com/Borislavv/remote-executer/pkg/gateway/telegram"
 )
 
 const (
@@ -64,12 +64,14 @@ func Run() error {
 	// app deps.
 	gateway := usecase.NewTelegram(config.TelegramEndpoint, config.TelegramToken)
 	polling := usecase.NewPolling(ctx, gateway, msgRepo)
+	messages := usecase.NewMessages(ctx, msgRepo)
 
 	// chans
-	messagesCh := make(chan telegramGateway.ResponseGetMessagesInterface)
+	messagesCh := make(chan []agg.Msg)
 	errCh := make(chan error)
 
 	go polling.Do(messagesCh, errCh)
+	go messages.Consume(messagesCh, errCh)
 
 	for {
 		select {
