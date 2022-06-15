@@ -2,8 +2,6 @@ package agg
 
 import (
 	"time"
-
-	agg "github.com/Borislavv/remote-executer/internal/domain/agg/mongo"
 )
 
 type MsgQuery struct {
@@ -99,8 +97,8 @@ type MsgQuery struct {
 	Limit int64 `json:"limit" schema:"limit"`
 }
 
-func (q MsgQuery) GetOpts() agg.OptsQuery {
-	return agg.OptsQuery{
+func (q MsgQuery) GetOpts() OptsQuery {
+	return OptsQuery{
 		SortBy:  q.SortBy,
 		OrderBy: q.OrderBy,
 		Offset:  q.Offset,

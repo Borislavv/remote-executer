@@ -5,7 +5,7 @@ import (
 	"log"
 
 	mongoRepo "github.com/Borislavv/remote-executer/internal/data/mongo"
-	agg "github.com/Borislavv/remote-executer/internal/domain/agg/msg"
+	agg "github.com/Borislavv/remote-executer/internal/domain/agg"
 )
 
 type Messages struct {

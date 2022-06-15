@@ -5,7 +5,7 @@ import (
 	"log"
 
 	mongoRepo "github.com/Borislavv/remote-executer/internal/data/mongo"
-	agg "github.com/Borislavv/remote-executer/internal/domain/agg/msg"
+	"github.com/Borislavv/remote-executer/internal/domain/agg"
 	"github.com/Borislavv/remote-executer/internal/domain/builder"
 	"github.com/Borislavv/remote-executer/internal/util"
 )

@@ -1,7 +1,5 @@
 package agg
 
-import agg "github.com/Borislavv/remote-executer/internal/domain/agg/mongo"
-
 type UserQuery struct {
 	// Filter by `ID`
 	//
@@ -62,8 +60,8 @@ type UserQuery struct {
 	Limit int64 `json:"limit" schema:"limit"`
 }
 
-func (q UserQuery) GetOpts() agg.OptsQuery {
-	return agg.OptsQuery{
+func (q UserQuery) GetOpts() OptsQuery {
+	return OptsQuery{
 		SortBy:  q.SortBy,
 		OrderBy: q.OrderBy,
 		Offset:  q.Offset,

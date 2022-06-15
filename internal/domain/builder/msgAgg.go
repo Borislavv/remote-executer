@@ -3,7 +3,7 @@ package builder
 import (
 	"time"
 
-	agg "github.com/Borislavv/remote-executer/internal/domain/agg/msg"
+	"github.com/Borislavv/remote-executer/internal/domain/agg"
 	"github.com/Borislavv/remote-executer/internal/domain/dto"
 	"github.com/Borislavv/remote-executer/internal/domain/entity"
 	"github.com/Borislavv/remote-executer/internal/domain/vo"

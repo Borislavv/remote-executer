@@ -1,7 +1,5 @@
 package agg
 
-import agg "github.com/Borislavv/remote-executer/internal/domain/agg/mongo"
-
 type ChatQuery struct {
 	// Filter by `ID`
 	//
@@ -55,8 +53,8 @@ type ChatQuery struct {
 	Limit int64 `json:"limit" schema:"limit"`
 }
 
-func (q ChatQuery) GetOpts() agg.OptsQuery {
-	return agg.OptsQuery{
+func (q ChatQuery) GetOpts() OptsQuery {
+	return OptsQuery{
 		SortBy:  q.SortBy,
 		OrderBy: q.OrderBy,
 		Offset:  q.Offset,

@@ -8,7 +8,7 @@ import (
 	"os/exec"
 
 	mongoRepo "github.com/Borislavv/remote-executer/internal/data/mongo"
-	agg "github.com/Borislavv/remote-executer/internal/domain/agg/msg"
+	agg "github.com/Borislavv/remote-executer/internal/domain/agg"
 	"github.com/Borislavv/remote-executer/internal/domain/dto"
 	"github.com/Borislavv/remote-executer/internal/util"
 )

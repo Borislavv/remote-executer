@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	mongoRepo "github.com/Borislavv/remote-executer/internal/data/mongo"
-	agg "github.com/Borislavv/remote-executer/internal/domain/agg/msg"
+	"github.com/Borislavv/remote-executer/internal/domain/agg"
 	"github.com/Borislavv/remote-executer/internal/domain/dto"
 	"github.com/Borislavv/remote-executer/internal/domain/usecase"
 	"github.com/Borislavv/remote-executer/internal/util"
