@@ -9,6 +9,6 @@ import (
 func main() {
 	// init. remoter-executer service
 	if err := remoter.Run(); err != nil {
-		log.Fatalln()
+		log.Fatalln(err)
 	}
 }
