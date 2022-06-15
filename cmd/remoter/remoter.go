@@ -19,6 +19,9 @@ type Config struct {
 	MongoURI string `env:"MONGO_URI,default=mongodb://localhost:27017/"`
 	MongoDB  string `env:"MONGO_DATABASE,default=remoter"`
 
+	TelegramEndpoint string `env:"TELEGRAM_ENDPOINT,default=https://api.telegram.org/"`
+	TelegramToken    string `env:"TELEGRAM_TOKEN,default="`
+
 	// service props.
 	WorkerTimeout     int `env:"WORKER_TIMEOUT,default=1"`
 	WriteMongoTimeout int `env:"WRITE_MONGO_TIMEOUT,default=1"`
