@@ -69,29 +69,33 @@ func (c *Commands) exec(msg agg.Msg) (dto.TelegramResponse, error) {
 
 	if err := cmd.Run(); err != nil {
 		if err := c.markAsExecuted(msg); err != nil {
-			return dto.NewTelegramResponse(
-				msg.Chat.Id,
-				fmt.Sprintf("Sorry, we can't execute this command: [%s].", msg.Msg.Text),
-			), util.ErrWithTrace(err)
+			return c.formatResponse(msg, stdout, stderr, err), util.ErrWithTrace(err)
 		}
 
-		return dto.NewTelegramResponse(
-			msg.Chat.Id,
-			fmt.Sprintf("Sorry, we can't execute this command: [%s].", msg.Msg.Text),
-		), util.ErrWithTrace(err)
+		return c.formatResponse(msg, stdout, stderr, err), util.ErrWithTrace(err)
 	}
 
 	if err := c.markAsExecuted(msg); err != nil {
-		return dto.NewTelegramResponse(
-			msg.Chat.Id,
-			fmt.Sprintf("Out: %s\nErr: %s", stdout.String(), stderr.String()),
-		), util.ErrWithTrace(err)
+		return c.formatResponse(msg, stdout, stderr, err), util.ErrWithTrace(err)
 	}
 
-	return dto.NewTelegramResponse(
-		msg.Chat.Id,
-		fmt.Sprintf("Out: \n```%s```\nErr: \n```%s```", stdout.String(), stderr.String()),
-	), nil
+	return c.formatResponse(msg, stdout, stderr, nil), nil
+}
+
+func (c *Commands) formatResponse(msg agg.Msg, stdout bytes.Buffer, stderr bytes.Buffer, err error) dto.TelegramResponse {
+	resp := ""
+
+	if err != nil {
+		resp = fmt.Sprintf("Sorry, we can't execute this command: [%s].", msg.Msg.Text)
+	} else {
+		if stderr.String() != "" {
+			resp = fmt.Sprintf("Err: ```%s```", stderr.String())
+		} else {
+			resp = fmt.Sprintf("Out: ```%s```", stdout.String())
+		}
+	}
+
+	return dto.NewTelegramResponse(msg.Chat.Id, resp)
 }
 
 func (c *Commands) findCommandsForExecute() ([]agg.Msg, error) {
