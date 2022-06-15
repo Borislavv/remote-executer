@@ -1,3 +1,7 @@
+github.com/Borislavv/TelegramApiGateway v0.0.0-20220615052627-1a67d5d01921 h1:OXhDXuX0+xWDADZjiHkicjbAyx0kvjCdGLeczEAX39c=
+github.com/Borislavv/TelegramApiGateway v0.0.0-20220615052627-1a67d5d01921/go.mod h1:MjAZh3h7CIprPOq/9iVqzhHeZMK4d9vkXLX1wHHBLro=
+github.com/Borislavv/TelegramApiGateway v0.0.0-20220615095458-e8abd93fcda7 h1:LTK8S8i7FMNLNyT9RfyEJ/hDVTkgmMKv7QHhKKWGiAE=
+github.com/Borislavv/TelegramApiGateway v0.0.0-20220615095458-e8abd93fcda7/go.mod h1:MjAZh3h7CIprPOq/9iVqzhHeZMK4d9vkXLX1wHHBLro=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/go-stack/stack v1.8.0 h1:5SgMzNM5HxrEjV0ww2lTmX6E2Izsfxas4+YHWRs3Lsk=
