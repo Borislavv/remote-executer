@@ -20,7 +20,7 @@ func NewMessages(ctx context.Context, msgRepo *mongoRepo.MsgRepo) *Messages {
 	}
 }
 
-func (m *Messages) Consume(messagesCh <-chan []agg.Msg, errCh chan<- error) {
+func (m *Messages) Consuming(messagesCh <-chan []agg.Msg, errCh chan<- error) {
 	log.Println("consuming messages has been started")
 
 	for {

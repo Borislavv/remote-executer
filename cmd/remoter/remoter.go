@@ -2,6 +2,7 @@ package remoter
 
 import (
 	"context"
+	"time"
 
 	"github.com/serge64/env"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -10,7 +11,9 @@ import (
 
 	mongoRepo "github.com/Borislavv/remote-executer/internal/data/mongo"
 	agg "github.com/Borislavv/remote-executer/internal/domain/agg/msg"
+	"github.com/Borislavv/remote-executer/internal/domain/dto"
 	"github.com/Borislavv/remote-executer/internal/domain/usecase"
+	"github.com/Borislavv/remote-executer/internal/util"
 )
 
 const (
@@ -37,7 +40,7 @@ func Run() error {
 	// init. app config
 	config := Config{}
 	if err := env.Unmarshal(&config); err != nil {
-		return err
+		return util.ErrWithTrace(err)
 	}
 
 	// init. context
@@ -47,13 +50,13 @@ func Run() error {
 	// connect to mongodb
 	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoURI))
 	if err != nil {
-		return err
+		return util.ErrWithTrace(err)
 	}
 	defer mongoClient.Disconnect(ctx)
 
 	// check the db is available
 	if err := mongoClient.Ping(ctx, readpref.Primary()); err != nil {
-		return err
+		return util.ErrWithTrace(err)
 	}
 
 	// repos.
@@ -63,20 +66,31 @@ func Run() error {
 
 	// app deps.
 	gateway := usecase.NewTelegram(config.TelegramEndpoint, config.TelegramToken)
+
+	// usecases
 	polling := usecase.NewPolling(ctx, gateway, msgRepo)
 	messages := usecase.NewMessages(ctx, msgRepo)
+	commands := usecase.NewCommands(ctx, msgRepo)
+	responses := usecase.NewResponses(ctx, gateway)
 
 	// chans
 	messagesCh := make(chan []agg.Msg)
+	responseCh := make(chan dto.TelegramResponseInterface)
 	errCh := make(chan error)
 
 	go polling.Do(messagesCh, errCh)
-	go messages.Consume(messagesCh, errCh)
+	go messages.Consuming(messagesCh, errCh)
+	go commands.Executing(responseCh, errCh)
+	go responses.Sending(responseCh, errCh)
 
 	for {
 		select {
 		case err := <-errCh:
 			cancel()
+
+			// awaiting while all gorutines will finished
+			time.Sleep(time.Second)
+
 			return err
 		default:
 			// don't block waiting for an error

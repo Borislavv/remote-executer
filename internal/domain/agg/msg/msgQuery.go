@@ -62,6 +62,12 @@ type MsgQuery struct {
 	// example: true|false
 	Executed bool `json:"executed" schema:"executed"`
 
+	// Include `executed` field in query
+	//
+	// required: true
+	// example: true|false
+	ByExecuted bool
+
 	// Sort by field
 	//
 	// required: false

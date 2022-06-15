@@ -7,6 +7,7 @@ import (
 	mongoRepo "github.com/Borislavv/remote-executer/internal/data/mongo"
 	agg "github.com/Borislavv/remote-executer/internal/domain/agg/msg"
 	"github.com/Borislavv/remote-executer/internal/domain/builder"
+	"github.com/Borislavv/remote-executer/internal/util"
 )
 
 type Polling struct {
@@ -41,13 +42,13 @@ func (p *Polling) Do(messagesCh chan<- []agg.Msg, errCh chan<- error) {
 		default:
 			offset, err := p.getOffset()
 			if err != nil {
-				errCh <- err
+				errCh <- util.ErrWithTrace(err)
 				continue
 			}
 
 			msgDTOs, err := p.gateway.GetMessages(offset)
 			if err != nil {
-				errCh <- err
+				errCh <- util.ErrWithTrace(err)
 				continue
 			}
 

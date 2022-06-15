@@ -10,6 +10,7 @@ import (
 	mongoRepo "github.com/Borislavv/remote-executer/internal/data/mongo"
 	agg "github.com/Borislavv/remote-executer/internal/domain/agg/msg"
 	"github.com/Borislavv/remote-executer/internal/domain/dto"
+	"github.com/Borislavv/remote-executer/internal/util"
 )
 
 type Commands struct {
@@ -24,7 +25,7 @@ func NewCommands(ctx context.Context, msgRepo *mongoRepo.MsgRepo) *Commands {
 	}
 }
 
-func (c *Commands) Exec(responseCh chan<- dto.TelegramResponseInterface, errCh chan<- error) {
+func (c *Commands) Executing(responseCh chan<- dto.TelegramResponseInterface, errCh chan<- error) {
 	log.Println("executing of commands has been started")
 
 OUTER:
@@ -36,7 +37,7 @@ OUTER:
 		default:
 			msgAggs, err := c.findCommandsForExecute()
 			if err != nil {
-				errCh <- err
+				errCh <- util.ErrWithTrace(err)
 				continue
 			}
 
@@ -57,6 +58,8 @@ OUTER:
 }
 
 func (c *Commands) exec(msg agg.Msg) (dto.TelegramResponse, error) {
+	fmt.Println(msg)
+
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 
@@ -69,40 +72,41 @@ func (c *Commands) exec(msg agg.Msg) (dto.TelegramResponse, error) {
 			return dto.NewTelegramResponse(
 				msg.Chat.Id,
 				fmt.Sprintf("Sorry, we can't execute this command: [%s].", msg.Msg.Text),
-			), err
+			), util.ErrWithTrace(err)
 		}
 
 		return dto.NewTelegramResponse(
 			msg.Chat.Id,
 			fmt.Sprintf("Sorry, we can't execute this command: [%s].", msg.Msg.Text),
-		), err
+		), util.ErrWithTrace(err)
 	}
 
 	if err := c.markAsExecuted(msg); err != nil {
 		return dto.NewTelegramResponse(
 			msg.Chat.Id,
 			fmt.Sprintf("Out: %s\nErr: %s", stdout.String(), stderr.String()),
-		), err
+		), util.ErrWithTrace(err)
 	}
 
 	return dto.NewTelegramResponse(
 		msg.Chat.Id,
-		fmt.Sprintf("Out: %s\nErr: %s", stdout.String(), stderr.String()),
+		fmt.Sprintf("Out: \n```%s```\nErr: \n```%s```", stdout.String(), stderr.String()),
 	), nil
 }
 
 func (c *Commands) findCommandsForExecute() ([]agg.Msg, error) {
 	return c.msgRepo.Find(c.ctx, agg.MsgQuery{
-		Executed: false,
-		OrderBy:  "updateId",
-		SortBy:   "asc",
-		Limit:    1,
+		ByExecuted: true,
+		Executed:   false,
+		OrderBy:    "updateId",
+		SortBy:     "asc",
+		Limit:      1,
 	})
 }
 
 func (c *Commands) markAsExecuted(msg agg.Msg) error {
 	if err := c.msgRepo.MarkAsExecuted(c.ctx, msg); err != nil {
-		return err
+		return util.ErrWithTrace(err)
 	}
 	return nil
 }

@@ -3,6 +3,7 @@ package mongoRepo
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	agg "github.com/Borislavv/remote-executer/internal/domain/agg/msg"
+	"github.com/Borislavv/remote-executer/internal/util"
 )
 
 type MsgRepo struct {
@@ -37,15 +39,15 @@ func (r *MsgRepo) InsertMany(ctx context.Context, msgs []agg.Msg) error {
 	}
 	result, err := r.coll.InsertMany(ctx, r.buf, options.InsertMany())
 	if err != nil {
-		return err
+		return util.ErrWithTrace(err)
 	}
 	if len(result.InsertedIDs) == 0 {
-		return errors.New("MsgRepo.InsertMany: no one `Msg` document was created")
+		return util.ErrWithTrace(errors.New("MsgRepo.InsertMany: no one `Msg` document was created"))
 	}
 
 	r.mu.Unlock()
 
-	return err
+	return nil
 }
 
 func (r *MsgRepo) Find(ctx context.Context, q agg.MsgQuery) ([]agg.Msg, error) {
@@ -53,32 +55,33 @@ func (r *MsgRepo) Find(ctx context.Context, q agg.MsgQuery) ([]agg.Msg, error) {
 
 	filter, err := r.GetFilter(q)
 	if err != nil {
-		return response, err
+		return response, util.ErrWithTrace(err)
 	}
 
 	cursor, err := r.coll.Find(ctx, filter, GetOpts(q))
 	if err != nil {
-		return response, err
+		return response, util.ErrWithTrace(err)
 	}
 	defer cursor.Close(ctx)
 
 	if err := cursor.All(ctx, &response); err != nil {
-		return response, err
+		return response, util.ErrWithTrace(err)
 	}
 
 	return response, nil
 }
 
 func (r *MsgRepo) MarkAsExecuted(ctx context.Context, msg agg.Msg) error {
-	_, err := r.coll.UpdateByID(ctx, msg.ID, bson.M{"$set": bson.M{"executed": true}})
+	res, err := r.coll.UpdateByID(ctx, msg.ID, bson.M{"$set": bson.M{"executed": true}})
 	if err != nil {
-		return err
+		return util.ErrWithTrace(err)
 	}
+	fmt.Println(res.MatchedCount, res.ModifiedCount)
 	return nil
 }
 
 func (r *MsgRepo) GetOffset(ctx context.Context) (int64, error) {
-	var msg agg.MsgQuery
+	var resp agg.Msg
 
 	q := agg.MsgQuery{
 		SortBy:  "updateId",
@@ -88,12 +91,12 @@ func (r *MsgRepo) GetOffset(ctx context.Context) (int64, error) {
 
 	f, err := r.GetFilter(q)
 	if err != nil {
-		return 0, err
+		return 0, util.ErrWithTrace(err)
 	}
 
 	c, err := r.coll.Find(ctx, f, GetOpts(q))
 	if err != nil {
-		return 0, err
+		return 0, util.ErrWithTrace(err)
 	}
 	defer c.Close(ctx)
 
@@ -101,11 +104,11 @@ func (r *MsgRepo) GetOffset(ctx context.Context) (int64, error) {
 		// handle the case when doc. was not found
 		return 0, nil
 	}
-	if err := c.Decode(&msg); err != nil {
-		return 0, err
+	if err := c.Decode(&resp); err != nil {
+		return 0, util.ErrWithTrace(err)
 	}
 
-	return msg.UpdateId + 1, nil
+	return resp.Msg.UpdateId + 1, nil
 }
 
 func (r *MsgRepo) GetFilter(q agg.MsgQuery) (bson.M, error) {
@@ -114,7 +117,7 @@ func (r *MsgRepo) GetFilter(q agg.MsgQuery) (bson.M, error) {
 	if q.ID != "" {
 		id, err := primitive.ObjectIDFromHex(q.ID)
 		if err != nil {
-			return f, err
+			return f, util.ErrWithTrace(err)
 		}
 
 		f["_id"] = bson.M{"$eq": id}
@@ -126,6 +129,10 @@ func (r *MsgRepo) GetFilter(q agg.MsgQuery) (bson.M, error) {
 
 	if q.UpdateId != 0 {
 		f["updateId"] = bson.M{"$eq": q.UpdateId}
+	}
+
+	if q.ByExecuted {
+		f["executed"] = bson.M{"$eq": q.Executed}
 	}
 
 	emptyTamestamp := (time.Time{})

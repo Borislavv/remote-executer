@@ -49,6 +49,12 @@ func (t *Telegram) GetMessages(offset int64) ([]dto.Msg, error) {
 	return msgDTOs, nil
 }
 
-func (t *Telegram) SendMessage(chatId int64, text string) error {
-	return t.gateway.SendMessage(telegramGateway.NewRequestSendMessage(chatId, text))
+func (t *Telegram) SendMessage(resp dto.TelegramResponseInterface) error {
+	return t.gateway.SendMessage(
+		telegramGateway.NewRequestSendMessage(
+			resp.GetChatId(),
+			resp.GetText(),
+			resp.GetParseMode(),
+		),
+	)
 }

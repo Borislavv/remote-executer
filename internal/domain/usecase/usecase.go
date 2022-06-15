@@ -17,17 +17,17 @@ type PollingUseCase interface {
 type MessagesUseCase interface {
 	NewMessages(ctx context.Context, msgRepo *mongoRepo.MsgRepo) *Messages
 	// Consume - consuming messages from channel and store them
-	Consume(messagesCh <-chan []agg.Msg, errCh chan<- error)
+	Consuming(messagesCh <-chan []agg.Msg, errCh chan<- error)
 }
 
 type CommandsUseCase interface {
 	NewCommands(ctx context.Context, msgRepo *mongoRepo.MsgRepo)
 	// Exec - find and execute commands
-	Exec(responseCh chan<- dto.TelegramResponseInterface, errCh chan<- error)
+	Executing(responseCh chan<- dto.TelegramResponseInterface, errCh chan<- error)
 }
 
-type ResponseUseCase interface {
-	NewResponse(ctx context.Context)
+type ResponsesUseCase interface {
+	NewResponse(ctx context.Context, gateway *Telegram) *Responses
 	// Send - sending response of executed commands
-	Send(responseCh <-chan dto.TelegramResponseInterface, errCh chan<- error)
+	Sending(responseCh <-chan dto.TelegramResponseInterface, errCh chan<- error)
 }
