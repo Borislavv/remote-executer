@@ -120,11 +120,15 @@ func (c *Commands) formatResponse(
 
 	if stdout.String() == "" {
 		if stderr.String() == "" {
-			if err != nil && rawErr {
-				resp = "*Err:* ``` " + err.Error() + " ```"
+			if err != nil {
+				if rawErr {
+					resp = "*Err:* ``` " + err.Error() + " ```"
+				} else {
+					resp = "*Err:* ``` " +
+						fmt.Sprintf("Sorry, we can't execute this command: [%s].", msg.Msg.Text) + " ```"
+				}
 			} else {
-				resp = "*Err:* ``` " +
-					fmt.Sprintf("Sorry, we can't execute this command: [%s].", msg.Msg.Text) + " ```"
+				resp = "*Out:* ``` Executed: [" + msg.Msg.Text + "] ```"
 			}
 		} else {
 			resp = fmt.Sprintf("*Err:* ``` %s ```", stderr.String())
