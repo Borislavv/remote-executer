@@ -1,4 +1,4 @@
-# remote-executer
+# Remote executer
 
 **Simple application for use the shell commands through Telegram client.**
 
