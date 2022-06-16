@@ -4,7 +4,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	agg "github.com/Borislavv/remote-executer/internal/domain/agg/mongo"
+	"github.com/Borislavv/remote-executer/internal/domain/agg"
 )
 
 func GetOpts(query agg.OptsableQuery) *options.FindOptions {

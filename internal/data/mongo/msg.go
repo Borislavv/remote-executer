@@ -2,8 +2,6 @@ package mongoRepo
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -12,8 +10,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	agg "github.com/Borislavv/remote-executer/internal/domain/agg/msg"
-	"github.com/Borislavv/remote-executer/internal/util"
+	"github.com/Borislavv/remote-executer/internal/domain/agg"
+	"github.com/Borislavv/remote-executer/internal/domain/errs"
 )
 
 type MsgRepo struct {
@@ -39,10 +37,10 @@ func (r *MsgRepo) InsertMany(ctx context.Context, msgs []agg.Msg) error {
 	}
 	result, err := r.coll.InsertMany(ctx, r.buf, options.InsertMany())
 	if err != nil {
-		return util.ErrWithTrace(err)
+		return errs.New(err).Interrupt()
 	}
 	if len(result.InsertedIDs) == 0 {
-		return util.ErrWithTrace(errors.New("MsgRepo.InsertMany: no one `Msg` document was created"))
+		return errs.New("MsgRepo.InsertMany: no one `Msg` document was created")
 	}
 
 	r.mu.Unlock()
@@ -55,28 +53,27 @@ func (r *MsgRepo) Find(ctx context.Context, q agg.MsgQuery) ([]agg.Msg, error) {
 
 	filter, err := r.GetFilter(q)
 	if err != nil {
-		return response, util.ErrWithTrace(err)
+		return response, errs.New(err).Interrupt()
 	}
 
 	cursor, err := r.coll.Find(ctx, filter, GetOpts(q))
 	if err != nil {
-		return response, util.ErrWithTrace(err)
+		return response, errs.New(err).Interrupt()
 	}
 	defer cursor.Close(ctx)
 
 	if err := cursor.All(ctx, &response); err != nil {
-		return response, util.ErrWithTrace(err)
+		return response, errs.New(err).Interrupt()
 	}
 
 	return response, nil
 }
 
 func (r *MsgRepo) MarkAsExecuted(ctx context.Context, msg agg.Msg) error {
-	res, err := r.coll.UpdateByID(ctx, msg.ID, bson.M{"$set": bson.M{"executed": true}})
+	_, err := r.coll.UpdateByID(ctx, msg.ID, bson.M{"$set": bson.M{"executed": true}})
 	if err != nil {
-		return util.ErrWithTrace(err)
+		return errs.New(err).Interrupt()
 	}
-	fmt.Println(res.MatchedCount, res.ModifiedCount)
 	return nil
 }
 
@@ -91,12 +88,12 @@ func (r *MsgRepo) GetOffset(ctx context.Context) (int64, error) {
 
 	f, err := r.GetFilter(q)
 	if err != nil {
-		return 0, util.ErrWithTrace(err)
+		return 0, errs.New(err).Interrupt()
 	}
 
 	c, err := r.coll.Find(ctx, f, GetOpts(q))
 	if err != nil {
-		return 0, util.ErrWithTrace(err)
+		return 0, errs.New(err).Interrupt()
 	}
 	defer c.Close(ctx)
 
@@ -105,7 +102,7 @@ func (r *MsgRepo) GetOffset(ctx context.Context) (int64, error) {
 		return 0, nil
 	}
 	if err := c.Decode(&resp); err != nil {
-		return 0, util.ErrWithTrace(err)
+		return 0, errs.New(err).Interrupt()
 	}
 
 	return resp.Msg.UpdateId + 1, nil
@@ -117,7 +114,7 @@ func (r *MsgRepo) GetFilter(q agg.MsgQuery) (bson.M, error) {
 	if q.ID != "" {
 		id, err := primitive.ObjectIDFromHex(q.ID)
 		if err != nil {
-			return f, util.ErrWithTrace(err)
+			return f, errs.New(err).Interrupt()
 		}
 
 		f["_id"] = bson.M{"$eq": id}
