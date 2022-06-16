@@ -3,52 +3,61 @@ package usecase
 import (
 	"context"
 	"log"
+	"sync"
+	"time"
 
 	mongoRepo "github.com/Borislavv/remote-executer/internal/data/mongo"
 	"github.com/Borislavv/remote-executer/internal/domain/agg"
 	"github.com/Borislavv/remote-executer/internal/domain/builder"
-	"github.com/Borislavv/remote-executer/internal/util"
+	"github.com/Borislavv/remote-executer/internal/domain/errs"
 )
 
 type Polling struct {
 	// offset for request messages from telegram
 	msgOffset int64
+	timeout   int
 
 	ctx     context.Context
 	gateway *Telegram
 	msgRepo *mongoRepo.MsgRepo
+	wg      *sync.WaitGroup
 }
 
 func NewPolling(
 	ctx context.Context,
 	gateway *Telegram,
 	msgRepo *mongoRepo.MsgRepo,
+	wg *sync.WaitGroup,
+	pollingTimeout int,
 ) *Polling {
 	return &Polling{
 		ctx:     ctx,
 		gateway: gateway,
 		msgRepo: msgRepo,
+		wg:      wg,
+		timeout: pollingTimeout,
 	}
 }
 
 func (p *Polling) Do(messagesCh chan<- []agg.Msg, errCh chan<- error) {
-	log.Println("polling has been started")
+	log.Println("STARTED: polling")
+	defer p.wg.Done()
 
 	for {
 		select {
 		case <-p.ctx.Done():
-			log.Println("stop polling due to context signal")
+			log.Println("STOPPED: polling")
 			return
 		default:
 			offset, err := p.getOffset()
 			if err != nil {
-				errCh <- util.ErrWithTrace(err)
+				errCh <- errs.New(err).Interrupt()
 				continue
 			}
 
 			msgDTOs, err := p.gateway.GetMessages(offset)
 			if err != nil {
-				errCh <- util.ErrWithTrace(err)
+				errCh <- errs.New(err).Interrupt()
 				continue
 			}
 
@@ -60,6 +69,9 @@ func (p *Polling) Do(messagesCh chan<- []agg.Msg, errCh chan<- error) {
 
 				p.updateOffset(len)
 			}
+
+			// timeout 0.25 before new request
+			time.Sleep(time.Millisecond * time.Duration(p.timeout))
 		}
 	}
 }

@@ -6,38 +6,50 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"sync"
+	"time"
 
 	mongoRepo "github.com/Borislavv/remote-executer/internal/data/mongo"
-	agg "github.com/Borislavv/remote-executer/internal/domain/agg"
+	"github.com/Borislavv/remote-executer/internal/domain/agg"
 	"github.com/Borislavv/remote-executer/internal/domain/dto"
-	"github.com/Borislavv/remote-executer/internal/util"
+	"github.com/Borislavv/remote-executer/internal/domain/errs"
 )
 
 type Commands struct {
+	timeout int
+
 	ctx     context.Context
 	msgRepo *mongoRepo.MsgRepo
+	wg      *sync.WaitGroup
 }
 
-func NewCommands(ctx context.Context, msgRepo *mongoRepo.MsgRepo) *Commands {
+func NewCommands(
+	ctx context.Context,
+	msgRepo *mongoRepo.MsgRepo,
+	wg *sync.WaitGroup,
+	mongoTimeout int,
+) *Commands {
 	return &Commands{
 		ctx:     ctx,
 		msgRepo: msgRepo,
+		wg:      wg,
+		timeout: mongoTimeout,
 	}
 }
 
 func (c *Commands) Executing(responseCh chan<- dto.TelegramResponseInterface, errCh chan<- error) {
-	log.Println("executing of commands has been started")
+	log.Println("STARTED: executing of commands")
+	defer c.wg.Done()
 
-OUTER:
 	for {
 		select {
 		case <-c.ctx.Done():
-			log.Println("stop commands executing due to context signal")
+			log.Println("STOPPED: commands executing")
 			return
 		default:
 			msgAggs, err := c.findCommandsForExecute()
 			if err != nil {
-				errCh <- util.ErrWithTrace(err)
+				errCh <- errs.New(err).Interrupt()
 				continue
 			}
 
@@ -46,20 +58,21 @@ OUTER:
 				if err != nil {
 					errCh <- err
 					responseCh <- resp
-					continue OUTER
+					continue
 				}
 
 				responseCh <- resp
 
-				log.Printf("Executed command: %s\n", msgAgg.Msg.Text)
+				log.Printf("executed command: %s\n", msgAgg.Msg.Text)
 			}
+
+			// timeout before new request
+			time.Sleep(time.Microsecond * time.Duration(c.timeout))
 		}
 	}
 }
 
 func (c *Commands) exec(msg agg.Msg) (dto.TelegramResponse, error) {
-	fmt.Println(msg)
-
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 
@@ -69,30 +82,40 @@ func (c *Commands) exec(msg agg.Msg) (dto.TelegramResponse, error) {
 
 	if err := cmd.Run(); err != nil {
 		if err := c.markAsExecuted(msg); err != nil {
-			return c.formatResponse(msg, stdout, stderr, err), util.ErrWithTrace(err)
+			return c.formatResponse(msg, stdout, stderr, err, false), errs.New(err).Interrupt()
 		}
 
-		return c.formatResponse(msg, stdout, stderr, err), util.ErrWithTrace(err)
+		return c.formatResponse(msg, stdout, stderr, err, true), nil
 	}
 
 	if err := c.markAsExecuted(msg); err != nil {
-		return c.formatResponse(msg, stdout, stderr, err), util.ErrWithTrace(err)
+		return c.formatResponse(msg, stdout, stderr, err, false), errs.New(err).Interrupt()
 	}
 
-	return c.formatResponse(msg, stdout, stderr, nil), nil
+	return c.formatResponse(msg, stdout, stderr, nil, false), nil
 }
 
-func (c *Commands) formatResponse(msg agg.Msg, stdout bytes.Buffer, stderr bytes.Buffer, err error) dto.TelegramResponse {
+func (c *Commands) formatResponse(
+	msg agg.Msg,
+	stdout bytes.Buffer,
+	stderr bytes.Buffer,
+	err error,
+	rawErr bool,
+) dto.TelegramResponse {
 	resp := ""
 
-	if err != nil {
-		resp = fmt.Sprintf("Sorry, we can't execute this command: [%s].", msg.Msg.Text)
-	} else {
-		if stderr.String() != "" {
-			resp = fmt.Sprintf("Err: ```%s```", stderr.String())
+	if stdout.String() == "" {
+		if stderr.String() == "" {
+			if err != nil && rawErr {
+				resp = "Err: ```" + err.Error() + "```"
+			} else {
+				resp = fmt.Sprintf("Sorry, we can't execute this command: [%s].", msg.Msg.Text)
+			}
 		} else {
-			resp = fmt.Sprintf("Out: ```%s```", stdout.String())
+			resp = fmt.Sprintf("Err: ```%s```", stderr.String())
 		}
+	} else {
+		resp = fmt.Sprintf("Out: ```%s```", stdout.String())
 	}
 
 	return dto.NewTelegramResponse(msg.Chat.Id, resp)
@@ -110,7 +133,7 @@ func (c *Commands) findCommandsForExecute() ([]agg.Msg, error) {
 
 func (c *Commands) markAsExecuted(msg agg.Msg) error {
 	if err := c.msgRepo.MarkAsExecuted(c.ctx, msg); err != nil {
-		return util.ErrWithTrace(err)
+		return errs.New(err).Interrupt()
 	}
 	return nil
 }
