@@ -15,14 +15,14 @@
 # Installation
 
 **Simple start:**
-1. Set up the environment variables:
-  - MONGO_URI
-  - MONGO_DATABASE
-  - TELEFRAM_USERNAME
-  - TELEGRAM_ENDPOINT
-  - TELEGRAM_TOKEN
-  - POLLING_TIMEOUT
-  - MONGODB_TIMEOUT
-2. Run the app:
-  - cd {projectDir}
-  - go run cmd/main.go
+1. **Set up the environment variables:**
+    - MONGO_URI
+    - MONGO_DATABASE
+    - TELEFRAM_USERNAME
+    - TELEGRAM_ENDPOINT
+    - TELEGRAM_TOKEN
+    - POLLING_TIMEOUT
+    - MONGODB_TIMEOUT
+2. **Run the app:**
+    - cd {projectDir}
+    - go run cmd/main.go
