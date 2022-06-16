@@ -74,7 +74,7 @@ func Run() error {
 	// usecases
 	polling := usecase.NewPolling(ctx, gateway, msgRepo, wg, cfg.PollingTimeout)
 	messages := usecase.NewMessages(ctx, msgRepo, wg)
-	commands := usecase.NewCommands(ctx, msgRepo, wg, cfg.MongoDbTimeout)
+	commands := usecase.NewCommands(ctx, msgRepo, wg, cfg.MongoDbTimeout, cfg.TelegramUsername)
 	responses := usecase.NewResponses(ctx, gateway, wg)
 
 	// channels

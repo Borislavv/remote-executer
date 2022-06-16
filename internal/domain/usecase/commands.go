@@ -3,6 +3,7 @@ package usecase
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os/exec"
@@ -17,6 +18,8 @@ import (
 
 type Commands struct {
 	timeout int
+	// username which can exec. commands
+	username string
 
 	ctx     context.Context
 	msgRepo *mongoRepo.MsgRepo
@@ -28,12 +31,14 @@ func NewCommands(
 	msgRepo *mongoRepo.MsgRepo,
 	wg *sync.WaitGroup,
 	mongoTimeout int,
+	username string,
 ) *Commands {
 	return &Commands{
-		ctx:     ctx,
-		msgRepo: msgRepo,
-		wg:      wg,
-		timeout: mongoTimeout,
+		ctx:      ctx,
+		msgRepo:  msgRepo,
+		wg:       wg,
+		timeout:  mongoTimeout,
+		username: username,
 	}
 }
 
@@ -76,6 +81,15 @@ func (c *Commands) exec(msg agg.Msg) (dto.TelegramResponse, error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 
+	if msg.User.Username != c.username {
+		if err := c.markAsExecuted(msg); err != nil {
+			return c.formatResponse(msg, stdout, stderr, err, false), errs.New(err).Interrupt()
+		}
+
+		err := errors.New("Sorry, you cannot execute commands. Permission denied!")
+		return c.formatResponse(msg, stdout, stderr, err, true), errs.New(err)
+	}
+
 	cmd := exec.Command("bash", "-c", msg.Msg.Text)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -107,15 +121,16 @@ func (c *Commands) formatResponse(
 	if stdout.String() == "" {
 		if stderr.String() == "" {
 			if err != nil && rawErr {
-				resp = "Err: ```" + err.Error() + "```"
+				resp = "*Err:* ``` " + err.Error() + " ```"
 			} else {
-				resp = fmt.Sprintf("Sorry, we can't execute this command: [%s].", msg.Msg.Text)
+				resp = "*Err:* ``` " +
+					fmt.Sprintf("Sorry, we can't execute this command: [%s].", msg.Msg.Text) + " ```"
 			}
 		} else {
-			resp = fmt.Sprintf("Err: ```%s```", stderr.String())
+			resp = fmt.Sprintf("*Err:* ``` %s ```", stderr.String())
 		}
 	} else {
-		resp = fmt.Sprintf("Out: ```%s```", stdout.String())
+		resp = fmt.Sprintf("*Out:* ``` %s ```", stdout.String())
 	}
 
 	return dto.NewTelegramResponse(msg.Chat.Id, resp)
